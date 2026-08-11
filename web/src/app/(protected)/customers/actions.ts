@@ -42,6 +42,23 @@ export async function addCustomer(formData: FormData) {
   revalidatePath("/customers");
 }
 
+export async function updateCustomer(
+  id: string,
+  name: string,
+  address: { street: string; suburb: string; state: string; postcode: string },
+  operatingHours: string | null
+) {
+  const supabase = await createSupabaseServerClient();
+
+  const { error } = await supabase
+    .from("customers")
+    .update({ name, address, operating_hours: operatingHours })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/customers");
+}
+
 export async function addRateCard(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const workType = String(formData.get("work_type"));

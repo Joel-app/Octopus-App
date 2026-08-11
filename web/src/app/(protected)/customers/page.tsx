@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { AU_STATES } from "@/lib/constants";
 import { addCustomer, addRateCard } from "./actions";
 import { RateCardRow } from "./RateCardRow";
+import { CustomerHeader } from "./CustomerHeader";
 
 interface CustomerRow {
   id: string;
@@ -106,20 +107,14 @@ function CustomerCard({
   customer: CustomerRow;
   rateCards: RateCardRow[];
 }) {
-  const addr = customer.address;
-  const addressLine = addr
-    ? [addr.street, addr.suburb, addr.state, addr.postcode].filter(Boolean).join(", ")
-    : null;
-
   return (
     <div className="border border-border rounded p-4 flex flex-col gap-4">
-      <div>
-        <h3 className="font-semibold">{customer.name}</h3>
-        {addressLine && <p className="text-sm text-text-secondary">{addressLine}</p>}
-        {customer.operating_hours && (
-          <p className="text-sm text-text-secondary">{customer.operating_hours}</p>
-        )}
-      </div>
+      <CustomerHeader
+        id={customer.id}
+        name={customer.name}
+        address={customer.address}
+        operatingHours={customer.operating_hours}
+      />
 
       <table className="text-sm w-full">
         <thead>
