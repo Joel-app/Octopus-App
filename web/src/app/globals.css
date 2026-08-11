@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/* Octopus Labour brand palette — dark is the default/base theme, light is
+   an explicit override. Keep in sync with packages/shared/theme.ts. */
+:root {
+  color-scheme: dark;
+  --text-primary: #f2f1ec;
+  --border: #2c2c29;
+  --text-secondary: #a8a6a0;
+  --bg: #121212;
+  --text-medium: #cfcdc7;
+  --border-strong: #3a3a36;
+  --text-muted: #8f8d86;
+  --info-text: #6fb3f2;
+  --danger-text: #e57373;
+  --success-bg: #14210a;
+  --warning-text: #d9a441;
+  --success-text: #8bc34a;
+  --info-bg: #10202e;
+  --hover-bg: #232320;
+  --panel-bg: #1b1b19;
+  --surface-2: #201f1c;
+  --surface-3: #1e1d1a;
+  --surface-4: #1a1a18;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --text-primary: #1f1f1d;
+  --border: #e2e0d8;
+  --text-secondary: #6b6a66;
+  --bg: #ffffff;
+  --text-medium: #4a4944;
+  --border-strong: #c9c7bd;
+  --text-muted: #8a8880;
+  --info-text: #185fa5;
+  --danger-text: #a32d2d;
+  --success-bg: #eaf3de;
+  --warning-text: #854f0b;
+  --success-text: #3b6d11;
+  --info-bg: #f0f6fc;
+  --hover-bg: #f5f4ee;
+  --panel-bg: #f7f6f1;
+  --surface-2: #eeece5;
+  --surface-3: #f0efe9;
+  --surface-4: #fbfaf7;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-foreground: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-medium: var(--text-medium);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-panel: var(--panel-bg);
+  --color-hover: var(--hover-bg);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+  --color-info-text: var(--info-text);
+  --color-danger-text: var(--danger-text);
+  --color-success-text: var(--success-text);
+  --color-warning-text: var(--warning-text);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Compact density: shrink the paddings/gaps used across the dashboard's
+   page containers, forms, and table rows. Targets the existing Tailwind
+   utility classes directly rather than a per-page rewrite. */
+:root[data-density="compact"] .p-8 {
+  padding: 1.25rem;
+}
+:root[data-density="compact"] .p-4 {
+  padding: 0.625rem;
+}
+:root[data-density="compact"] .gap-8 {
+  gap: 1.25rem;
+}
+:root[data-density="compact"] .gap-3 {
+  gap: 0.5rem;
+}
+:root[data-density="compact"] .py-2 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+:root[data-density="compact"] .py-1\.5 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}

@@ -1,0 +1,11 @@
+{
+  "name": "@workforce-app/shared",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "suncalc": "^2.0.1"
+  }
+}
