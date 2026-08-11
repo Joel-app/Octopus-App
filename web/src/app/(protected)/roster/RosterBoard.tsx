@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { AU_STATES, ROLES } from "@/lib/constants";
-import { assignStaffToRole, moveAssignment, removeShift, setShiftStatus, unassignStaff } from "./actions";
+import {
+  addContainerJob,
+  assignStaffToRole,
+  moveAssignment,
+  removeContainerJob,
+  removeShift,
+  setShiftStatus,
+  unassignStaff,
+} from "./actions";
 
 interface CustomerRow {
   id: string;
@@ -27,6 +35,19 @@ interface AssignmentRow {
   staff_id: string;
   role: string;
 }
+interface JobRow {
+  id: string;
+  shift_id: string;
+  type: string;
+  size: string | null;
+  status: string;
+}
+interface ContainerRateCardRow {
+  id: string;
+  customer_id: string;
+  position_or_type: string;
+  size: string | null;
+}
 
 const POOL = "__pool__";
 
@@ -50,11 +71,15 @@ export function RosterBoard({
   staff,
   shifts,
   assignments,
+  jobs,
+  containerRateCards,
 }: {
   customers: CustomerRow[];
   staff: StaffRow[];
   shifts: ShiftRow[];
   assignments: AssignmentRow[];
+  jobs: JobRow[];
+  containerRateCards: ContainerRateCardRow[];
 }) {
   const [selected, setSelected] = useState<DragPayload | null>(null);
   const [dragOverZone, setDragOverZone] = useState<string | null>(null);
@@ -83,6 +108,24 @@ export function RosterBoard({
     }
     return map;
   }, [assignments]);
+
+  const jobsByShift = useMemo(() => {
+    const map = new Map<string, JobRow[]>();
+    for (const j of jobs) {
+      if (!map.has(j.shift_id)) map.set(j.shift_id, []);
+      map.get(j.shift_id)!.push(j);
+    }
+    return map;
+  }, [jobs]);
+
+  const containerRateCardsByCustomer = useMemo(() => {
+    const map = new Map<string, ContainerRateCardRow[]>();
+    for (const rc of containerRateCards) {
+      if (!map.has(rc.customer_id)) map.set(rc.customer_id, []);
+      map.get(rc.customer_id)!.push(rc);
+    }
+    return map;
+  }, [containerRateCards]);
 
   function zoneLabel(zoneKey: string): string {
     if (zoneKey === POOL) return "the pool";
@@ -179,7 +222,7 @@ export function RosterBoard({
 
   return (
     <div className="flex gap-6 items-start">
-      <aside className="w-56 shrink-0 border border-border rounded p-3 flex flex-col gap-3">
+      <aside className="w-56 shrink-0 border border-border rounded p-3 flex flex-col gap-3 sticky top-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
         <PoolZone
           title={`Unassigned (${unassignedStaff.length})`}
           staffList={unassignedStaff}
@@ -230,6 +273,8 @@ export function RosterBoard({
                     onChipClick={handleChipClick}
                     onZoneClick={handleZoneClick}
                     tryAssign={tryAssign}
+                    jobsByShift={jobsByShift}
+                    containerRateCards={containerRateCardsByCustomer.get(customer.id) ?? []}
                   />
                 ))}
               </div>
@@ -332,6 +377,8 @@ function CustomerColumn({
   onChipClick,
   onZoneClick,
   tryAssign,
+  jobsByShift,
+  containerRateCards,
 }: {
   customer: CustomerRow;
   shifts: ShiftRow[];
@@ -343,6 +390,8 @@ function CustomerColumn({
   onChipClick: (staffId: string, zoneKey: string, assignmentId: string | null, locked: boolean) => void;
   onZoneClick: (zoneKey: string, locked: boolean) => void;
   tryAssign: (staffId: string, target: string, from: string | null, assignmentId: string | null) => void;
+  jobsByShift: Map<string, JobRow[]>;
+  containerRateCards: ContainerRateCardRow[];
 }) {
   return (
     <div className="border border-border rounded p-3 flex flex-col gap-3">
@@ -360,6 +409,8 @@ function CustomerColumn({
           onChipClick={onChipClick}
           onZoneClick={onZoneClick}
           tryAssign={tryAssign}
+          jobs={jobsByShift.get(shift.id) ?? []}
+          containerRateCards={containerRateCards}
         />
       ))}
     </div>
@@ -376,6 +427,8 @@ function ShiftBlock({
   onChipClick,
   onZoneClick,
   tryAssign,
+  jobs,
+  containerRateCards,
 }: {
   shift: ShiftRow;
   assignmentsByZone: Map<string, AssignmentRow[]>;
@@ -386,6 +439,8 @@ function ShiftBlock({
   onChipClick: (staffId: string, zoneKey: string, assignmentId: string | null, locked: boolean) => void;
   onZoneClick: (zoneKey: string, locked: boolean) => void;
   tryAssign: (staffId: string, target: string, from: string | null, assignmentId: string | null) => void;
+  jobs: JobRow[];
+  containerRateCards: ContainerRateCardRow[];
 }) {
   const locked = shift.status === "confirmed";
   const roles = availableRoles(shift.shift_type);
@@ -415,6 +470,10 @@ function ShiftBlock({
           )}
         </div>
       </div>
+
+      {shift.shift_type === "container" && (
+        <ContainerJobsSection shiftId={shift.id} jobs={jobs} containerRateCards={containerRateCards} locked={locked} />
+      )}
 
       {roles.map((role) => {
         const zoneKey = `${shift.id}::${role}`;
@@ -492,6 +551,63 @@ function ShiftBlock({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function ContainerJobsSection({
+  shiftId,
+  jobs,
+  containerRateCards,
+  locked,
+}: {
+  shiftId: string;
+  jobs: JobRow[];
+  containerRateCards: ContainerRateCardRow[];
+  locked: boolean;
+}) {
+  return (
+    <div className="border border-border rounded p-2 flex flex-col gap-2">
+      <div className="text-xs text-text-muted">Containers</div>
+      <ul className="flex flex-col gap-1">
+        {jobs.length === 0 && <li className="text-xs text-text-muted px-1">None added yet</li>}
+        {jobs.map((j) => (
+          <li
+            key={j.id}
+            className="text-sm border border-border rounded px-2 py-1 flex justify-between items-center gap-2"
+          >
+            <span>
+              {j.type}
+              {j.size ? ` — ${j.size}` : ""} · <span className="text-text-muted text-xs">{j.status}</span>
+            </span>
+            {j.status === "pending" && (
+              <button onClick={() => removeContainerJob(j.id)} className="text-danger-text text-xs">
+                ✕
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+      {!locked &&
+        (containerRateCards.length === 0 ? (
+          <p className="text-xs text-text-muted">
+            No container rate cards set up for this customer yet — add one on the Customers tab first.
+          </p>
+        ) : (
+          <form action={addContainerJob.bind(null, shiftId)} className="flex gap-2 items-end text-sm">
+            <select name="rate_card_id" required className="border border-border rounded px-2 py-1 bg-panel flex-1">
+              {containerRateCards.map((rc) => (
+                <option key={rc.id} value={rc.id}>
+                  {rc.position_or_type}
+                  {rc.size ? ` — ${rc.size}` : ""}
+                </option>
+              ))}
+            </select>
+            <button type="submit" className="text-xs border border-border rounded px-2 py-1">
+              Add container
+            </button>
+          </form>
+        ))}
     </div>
   );
 }

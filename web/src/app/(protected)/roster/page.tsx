@@ -31,6 +31,21 @@ interface AssignmentRow {
   role: string;
 }
 
+interface JobRow {
+  id: string;
+  shift_id: string;
+  type: string;
+  size: string | null;
+  status: string;
+}
+
+interface ContainerRateCardRow {
+  id: string;
+  customer_id: string;
+  position_or_type: string;
+  size: string | null;
+}
+
 function addDays(date: string, delta: number) {
   const d = new Date(`${date}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + delta);
@@ -64,13 +79,28 @@ export default async function RosterPage({
   ]);
 
   const shiftIds = (shifts ?? []).map((s) => s.id);
-  const { data: assignments } = shiftIds.length
-    ? await supabase
-        .from("shift_assignments")
-        .select("id, shift_id, staff_id, role")
-        .in("shift_id", shiftIds)
-        .returns<AssignmentRow[]>()
-    : { data: [] as AssignmentRow[] };
+  const [{ data: assignments }, { data: jobs }, { data: containerRateCards }] = await Promise.all([
+    shiftIds.length
+      ? supabase
+          .from("shift_assignments")
+          .select("id, shift_id, staff_id, role")
+          .in("shift_id", shiftIds)
+          .returns<AssignmentRow[]>()
+      : Promise.resolve({ data: [] as AssignmentRow[] }),
+    shiftIds.length
+      ? supabase
+          .from("jobs")
+          .select("id, shift_id, type, size, status")
+          .eq("job_type", "container")
+          .in("shift_id", shiftIds)
+          .returns<JobRow[]>()
+      : Promise.resolve({ data: [] as JobRow[] }),
+    supabase
+      .from("rate_cards")
+      .select("id, customer_id, position_or_type, size")
+      .eq("work_type", "container")
+      .returns<ContainerRateCardRow[]>(),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -140,6 +170,8 @@ export default async function RosterPage({
         staff={staff ?? []}
         shifts={shifts ?? []}
         assignments={assignments ?? []}
+        jobs={jobs ?? []}
+        containerRateCards={containerRateCards ?? []}
       />
     </div>
   );
