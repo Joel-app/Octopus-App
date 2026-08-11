@@ -4,21 +4,16 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DEFAULT_HOURLY_POSITIONS } from "@/lib/constants";
 
-export async function addCustomer(formData: FormData) {
+export async function addCustomer(
+  name: string,
+  address: { street: string; suburb: string; state: string; postcode: string },
+  operatingHours: string | null
+) {
   const supabase = await createSupabaseServerClient();
 
   const { data: customer, error } = await supabase
     .from("customers")
-    .insert({
-      name: String(formData.get("name") || ""),
-      address: {
-        street: String(formData.get("street") || ""),
-        suburb: String(formData.get("suburb") || ""),
-        state: String(formData.get("state") || ""),
-        postcode: String(formData.get("postcode") || ""),
-      },
-      operating_hours: String(formData.get("operating_hours") || "") || null,
-    })
+    .insert({ name, address, operating_hours: operatingHours })
     .select("id")
     .single();
 
@@ -57,15 +52,17 @@ export async function updateCustomer(
 
   if (error) throw new Error(error.message);
   revalidatePath("/customers");
+  revalidatePath(`/customers/${id}`);
 }
 
 export async function addRateCard(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const workType = String(formData.get("work_type"));
   const size = String(formData.get("size") || "");
+  const customerId = String(formData.get("customer_id"));
 
   const { error } = await supabase.from("rate_cards").insert({
-    customer_id: String(formData.get("customer_id")),
+    customer_id: customerId,
     work_type: workType,
     position_or_type: String(formData.get("position_or_type") || ""),
     size: workType === "container" ? size || null : null,
@@ -74,7 +71,7 @@ export async function addRateCard(formData: FormData) {
   });
 
   if (error) throw new Error(error.message);
-  revalidatePath("/customers");
+  revalidatePath(`/customers/${customerId}`);
 }
 
 export async function updateRateCard(id: string, chargeRate: number | null, payRate: number | null) {
@@ -86,12 +83,12 @@ export async function updateRateCard(id: string, chargeRate: number | null, payR
     .eq("id", id);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/customers");
+  revalidatePath("/customers/[id]", "page");
 }
 
 export async function deleteRateCard(id: string) {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("rate_cards").delete().eq("id", id);
   if (error) throw new Error(error.message);
-  revalidatePath("/customers");
+  revalidatePath("/customers/[id]", "page");
 }
