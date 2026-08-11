@@ -1,9 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import { verifySession } from "@/lib/dal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { AU_STATES, YES_NO } from "@/lib/constants";
+import { AU_STATES } from "@/lib/constants";
 import { saveStaffCompliance } from "../actions";
 import { VisaSection } from "./VisaSection";
+import { TaxSuperSection } from "./TaxSuperSection";
 
 interface StaffProfile {
   id: string;
@@ -161,108 +162,19 @@ export default async function StaffCompliancePage({ params }: { params: Promise<
           </div>
         </section>
 
-        <section className="flex flex-col gap-3 border border-border rounded p-4">
-          <h2 className="text-sm font-semibold">Tax details</h2>
-          <label className={labelClass}>
-            Tax type
-            <select name="tax_type" defaultValue={sensitive?.tax_type ?? ""} className={inputClass}>
-              <option value="">—</option>
-              <option value="TFN">TFN</option>
-              <option value="ABN">ABN</option>
-            </select>
-          </label>
-
-          <h3 className="text-xs font-semibold text-text-secondary mt-2">If TFN</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <label className={labelClass}>
-              TFN
-              <input name="tfn" defaultValue={tfn} className={inputClass} />
-            </label>
-          </div>
-
-          <h3 className="text-xs font-semibold text-text-secondary mt-2">If ABN</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <label className={labelClass}>
-              ABN
-              <input name="abn" defaultValue={sensitive?.abn ?? ""} className={inputClass} />
-            </label>
-            <label className={labelClass}>
-              ABN lookup link
-              <input name="abn_lookup_link" defaultValue={sensitive?.abn_lookup_link ?? ""} className={inputClass} />
-            </label>
-            <label className={labelClass}>
-              GST registered
-              <select name="gst_registered" defaultValue={sensitive?.gst_registered ?? ""} className={inputClass}>
-                <option value="">—</option>
-                {YES_NO.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </section>
-
-        <section className="flex flex-col gap-3 border border-border rounded p-4">
-          <h2 className="text-sm font-semibold">Superannuation</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <label className={labelClass}>
-              Fund name
-              <input name="super_fund_name" defaultValue={sensitive?.super_fund_name ?? ""} className={inputClass} />
-            </label>
-            <label className={labelClass}>
-              Fund ABN
-              <input name="super_fund_abn" defaultValue={sensitive?.super_fund_abn ?? ""} className={inputClass} />
-            </label>
-            <label className={labelClass}>
-              USI
-              <input name="super_usi" defaultValue={sensitive?.super_usi ?? ""} className={inputClass} />
-            </label>
-            <label className={labelClass}>
-              Account name
-              <input
-                name="super_account_name"
-                defaultValue={sensitive?.super_account_name ?? ""}
-                className={inputClass}
-              />
-            </label>
-            <label className={labelClass}>
-              Member number
-              <input name="super_member_number" defaultValue={superMemberNumber} className={inputClass} />
-            </label>
-          </div>
-          <h3 className="text-xs font-semibold text-text-secondary mt-2">Fund address</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <label className={labelClass}>
-              Street
-              <input name="super_address_street" defaultValue={superAddress.street ?? ""} className={inputClass} />
-            </label>
-            <label className={labelClass}>
-              Suburb
-              <input name="super_address_suburb" defaultValue={superAddress.suburb ?? ""} className={inputClass} />
-            </label>
-            <label className={labelClass}>
-              State
-              <select name="super_address_state" defaultValue={superAddress.state ?? ""} className={inputClass}>
-                <option value="">—</option>
-                {AU_STATES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={labelClass}>
-              Postcode
-              <input
-                name="super_address_postcode"
-                defaultValue={superAddress.postcode ?? ""}
-                className={inputClass}
-              />
-            </label>
-          </div>
-        </section>
+        <TaxSuperSection
+          initialTaxType={sensitive?.tax_type ?? ""}
+          tfn={tfn}
+          abn={sensitive?.abn ?? ""}
+          abnLookupLink={sensitive?.abn_lookup_link ?? ""}
+          gstRegistered={sensitive?.gst_registered ?? ""}
+          superFundName={sensitive?.super_fund_name ?? ""}
+          superFundAbn={sensitive?.super_fund_abn ?? ""}
+          superUsi={sensitive?.super_usi ?? ""}
+          superAccountName={sensitive?.super_account_name ?? ""}
+          superMemberNumber={superMemberNumber}
+          superAddress={superAddress}
+        />
 
         <VisaSection
           initialResident={sensitive?.visa_status ?? ""}
