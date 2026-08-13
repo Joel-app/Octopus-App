@@ -5,6 +5,7 @@ import { AU_STATES } from "@/lib/constants";
 import { saveStaffCompliance } from "../actions";
 import { VisaSection } from "./VisaSection";
 import { TaxSuperSection } from "./TaxSuperSection";
+import { DocumentField } from "./DocumentField";
 
 interface StaffProfile {
   id: string;
@@ -38,6 +39,10 @@ interface StaffSensitiveRow {
   visa_notes: string | null;
   forklift_licence_expiry: string | null;
   lo_licence_expiry: string | null;
+  id_photo_path: string | null;
+  forklift_licence_photo_path: string | null;
+  lo_licence_photo_path: string | null;
+  tax_file_declaration_path: string | null;
 }
 
 export default async function StaffCompliancePage({ params }: { params: Promise<{ id: string }> }) {
@@ -93,6 +98,19 @@ export default async function StaffCompliancePage({ params }: { params: Promise<
     superMemberNumber = superRes.data ?? "";
   }
 
+  async function signedUrlFor(path: string | null | undefined) {
+    if (!path) return null;
+    const { data } = await supabase.storage.from("staff-documents").createSignedUrl(path, 3600);
+    return data?.signedUrl ?? null;
+  }
+
+  const [idPhotoUrl, forkliftLicencePhotoUrl, loLicencePhotoUrl, taxFileDeclarationUrl] = await Promise.all([
+    signedUrlFor(sensitive?.id_photo_path),
+    signedUrlFor(sensitive?.forklift_licence_photo_path),
+    signedUrlFor(sensitive?.lo_licence_photo_path),
+    signedUrlFor(sensitive?.tax_file_declaration_path),
+  ]);
+
   const address = sensitive?.address ?? {};
   const superAddress = sensitive?.super_fund_address ?? {};
 
@@ -137,6 +155,16 @@ export default async function StaffCompliancePage({ params }: { params: Promise<
         </section>
 
         <section className="flex flex-col gap-3 border border-border rounded p-4">
+          <h2 className="text-sm font-semibold">ID document</h2>
+          <DocumentField
+            label="Photo ID (driver licence, passport, etc.)"
+            name="id_photo"
+            signedUrl={idPhotoUrl}
+            accept="image/*"
+          />
+        </section>
+
+        <section className="flex flex-col gap-3 border border-border rounded p-4">
           <h2 className="text-sm font-semibold">Bank details</h2>
           <div className="grid grid-cols-2 gap-3">
             <label className={labelClass}>
@@ -174,6 +202,7 @@ export default async function StaffCompliancePage({ params }: { params: Promise<
           superAccountName={sensitive?.super_account_name ?? ""}
           superMemberNumber={superMemberNumber}
           superAddress={superAddress}
+          taxFileDeclarationUrl={taxFileDeclarationUrl}
         />
 
         <VisaSection
@@ -205,6 +234,18 @@ export default async function StaffCompliancePage({ params }: { params: Promise<
                 className={inputClass}
               />
             </label>
+            <DocumentField
+              label="Forklift licence photo"
+              name="forklift_licence_photo"
+              signedUrl={forkliftLicencePhotoUrl}
+              accept="image/*"
+            />
+            <DocumentField
+              label="LO licence photo"
+              name="lo_licence_photo"
+              signedUrl={loLicencePhotoUrl}
+              accept="image/*"
+            />
           </div>
         </section>
 

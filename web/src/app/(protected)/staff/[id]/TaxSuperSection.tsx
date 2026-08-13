@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AU_STATES, YES_NO } from "@/lib/constants";
+import { DocumentField } from "./DocumentField";
 
 const inputClass = "border border-border rounded px-2 py-1 bg-panel w-full";
 const labelClass = "flex flex-col gap-1 text-sm";
@@ -25,6 +26,7 @@ export function TaxSuperSection({
   superAccountName,
   superMemberNumber,
   superAddress,
+  taxFileDeclarationUrl,
 }: {
   initialTaxType: string;
   tfn: string;
@@ -37,6 +39,7 @@ export function TaxSuperSection({
   superAccountName: string;
   superMemberNumber: string;
   superAddress: Address;
+  taxFileDeclarationUrl: string | null;
 }) {
   const [taxType, setTaxType] = useState(initialTaxType);
 
@@ -64,6 +67,12 @@ export function TaxSuperSection({
               TFN
               <input name="tfn" defaultValue={tfn} className={inputClass} />
             </label>
+            <DocumentField
+              label="Tax file declaration"
+              name="tax_file_declaration"
+              signedUrl={taxFileDeclarationUrl}
+              accept="image/*,application/pdf"
+            />
           </div>
         )}
 

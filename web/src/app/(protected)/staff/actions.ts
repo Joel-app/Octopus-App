@@ -30,19 +30,55 @@ async function encryptIfPresent(supabase: Awaited<ReturnType<typeof createSupaba
   return data;
 }
 
+// Uploads a document to the staff-documents bucket under a fixed filename
+// per document type (so re-uploading just overwrites the old one) and
+// returns the storage path to save. Returns undefined — not null — when no
+// file was chosen this submission, so callers can tell "leave unchanged"
+// apart from "clear it": an empty <input type="file"> still submits a
+// zero-byte File, which would otherwise look like a real upload.
+async function uploadDocumentIfProvided(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  profileId: string,
+  formData: FormData,
+  fieldName: string,
+  storageFileName: string
+): Promise<string | undefined> {
+  const file = formData.get(fieldName);
+  if (!(file instanceof File) || file.size === 0) return undefined;
+
+  const ext = file.name.split(".").pop() || "bin";
+  const path = `${profileId}/${storageFileName}.${ext}`;
+  const { error } = await supabase.storage.from("staff-documents").upload(path, file, { upsert: true });
+  if (error) throw new Error(error.message);
+  return path;
+}
+
 export async function saveStaffCompliance(profileId: string, formData: FormData) {
   const supabase = await createSupabaseServerClient();
 
   const str = (key: string) => String(formData.get(key) || "") || null;
 
-  const [bsbEncrypted, accountNumberEncrypted, tfnEncrypted, superMemberNumberEncrypted] = await Promise.all([
+  const [
+    bsbEncrypted,
+    accountNumberEncrypted,
+    tfnEncrypted,
+    superMemberNumberEncrypted,
+    idPhotoPath,
+    forkliftLicencePhotoPath,
+    loLicencePhotoPath,
+    taxFileDeclarationPath,
+  ] = await Promise.all([
     encryptIfPresent(supabase, String(formData.get("bank_bsb") || "")),
     encryptIfPresent(supabase, String(formData.get("bank_account_number") || "")),
     encryptIfPresent(supabase, String(formData.get("tfn") || "")),
     encryptIfPresent(supabase, String(formData.get("super_member_number") || "")),
+    uploadDocumentIfProvided(supabase, profileId, formData, "id_photo", "id-photo"),
+    uploadDocumentIfProvided(supabase, profileId, formData, "forklift_licence_photo", "forklift-licence"),
+    uploadDocumentIfProvided(supabase, profileId, formData, "lo_licence_photo", "lo-licence"),
+    uploadDocumentIfProvided(supabase, profileId, formData, "tax_file_declaration", "tax-file-declaration"),
   ]);
 
-  const { error } = await supabase.from("staff_sensitive").upsert({
+  const payload: Record<string, unknown> = {
     profile_id: profileId,
     address: {
       street: str("address_street"),
@@ -78,7 +114,14 @@ export async function saveStaffCompliance(profileId: string, formData: FormData)
     forklift_licence_expiry: str("forklift_licence_expiry"),
     lo_licence_expiry: str("lo_licence_expiry"),
     updated_at: new Date().toISOString(),
-  });
+  };
+
+  if (idPhotoPath !== undefined) payload.id_photo_path = idPhotoPath;
+  if (forkliftLicencePhotoPath !== undefined) payload.forklift_licence_photo_path = forkliftLicencePhotoPath;
+  if (loLicencePhotoPath !== undefined) payload.lo_licence_photo_path = loLicencePhotoPath;
+  if (taxFileDeclarationPath !== undefined) payload.tax_file_declaration_path = taxFileDeclarationPath;
+
+  const { error } = await supabase.from("staff_sensitive").upsert(payload);
 
   if (error) throw new Error(error.message);
   revalidatePath(`/staff/${profileId}`);
