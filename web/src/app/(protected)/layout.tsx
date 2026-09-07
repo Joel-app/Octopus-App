@@ -70,6 +70,7 @@ export default async function ProtectedLayout({
                   </>
                 ),
               },
+              { href: "/leave", label: "Leave" },
             ]}
           />
           <NavDropdown
@@ -88,16 +89,9 @@ export default async function ProtectedLayout({
                     },
                   ]
                 : []),
+              ...(profile.role === "superadmin" ? [{ href: "/admins", label: "Admins" }] : []),
             ]}
           />
-          <Link href="/leave" className="text-sm">
-            Leave
-          </Link>
-          {profile.role === "superadmin" && (
-            <Link href="/admins" className="text-sm">
-              Admins
-            </Link>
-          )}
           <Link href="/settings" className="text-sm">
             Settings
           </Link>
