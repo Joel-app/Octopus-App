@@ -71,14 +71,9 @@ export default async function ProtectedLayout({
             )
           )}
           {profile.role !== "operations" && (
-            <>
-              <Link href="/pays" className="text-sm">
-                Pays
-              </Link>
-              <Link href="/billing" className="text-sm">
-                Billing
-              </Link>
-            </>
+            <Link href="/billing" className="text-sm">
+              Billing
+            </Link>
           )}
           {profile.role === "superadmin" && (
             <Link href="/admins" className="text-sm">
