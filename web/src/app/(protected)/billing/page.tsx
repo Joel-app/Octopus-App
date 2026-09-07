@@ -5,7 +5,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { aggregateByGroup, periodBounds, type GroupBy, type GroupedRow } from "@/lib/reports";
 
 type View = "customer" | "staff";
-type Level = "summary" | "detail";
 
 interface BillingRow {
   item_date: string;
@@ -35,7 +34,7 @@ function defaultDates() {
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; level?: string; start?: string; end?: string; groupBy?: string; filter?: string }>;
+  searchParams: Promise<{ view?: string; start?: string; end?: string; groupBy?: string; filter?: string }>;
 }) {
   const { profile: viewer } = await verifySession();
   if (viewer.role === "operations") {
@@ -44,12 +43,12 @@ export default async function BillingPage({
 
   const params = await searchParams;
   const view: View = params.view === "staff" ? "staff" : "customer";
-  const level: Level = params.level === "detail" ? "detail" : "summary";
   const defaults = defaultDates();
   const start = params.start || defaults.start;
   const end = params.end || defaults.end;
   const groupBy: GroupBy = params.groupBy === "week" ? "week" : "day";
   const filterValue = params.filter || null;
+  const level: "summary" | "detail" = filterValue ? "detail" : "summary";
 
   const supabase = await createSupabaseServerClient();
 
@@ -74,16 +73,8 @@ export default async function BillingPage({
     level === "detail" ? [...scopedRows].sort((a, b) => a.item_date.localeCompare(b.item_date)) : [];
   const total = scopedRows.reduce((sum, r) => sum + r.amount, 0);
 
-  function tabHref(overrides: Record<string, string>) {
-    const merged = new URLSearchParams({
-      view,
-      level,
-      start,
-      end,
-      groupBy,
-      ...(filterValue ? { filter: filterValue } : {}),
-      ...overrides,
-    });
+  function viewTabHref(newView: View) {
+    const merged = new URLSearchParams({ view: newView, start, end, groupBy });
     return `/billing?${merged.toString()}`;
   }
 
@@ -91,7 +82,6 @@ export default async function BillingPage({
     const bounds = periodBounds(g.period, groupBy);
     const merged = new URLSearchParams({
       view,
-      level: "detail",
       start: bounds.start,
       end: bounds.end,
       groupBy,
@@ -100,9 +90,10 @@ export default async function BillingPage({
     return `/billing?${merged.toString()}`;
   }
 
+  const backToSummaryHref = `/billing?${new URLSearchParams({ view, start, end, groupBy }).toString()}`;
+
   const exportHref = `/api/billing/export?${new URLSearchParams({
     view,
-    level,
     start,
     end,
     groupBy,
@@ -115,13 +106,13 @@ export default async function BillingPage({
 
       <div className="flex gap-2 border border-border rounded p-1 text-sm self-start">
         <Link
-          href={tabHref({ view: "customer" })}
+          href={viewTabHref("customer")}
           className={view === "customer" ? "bg-hover px-3 py-1 rounded" : "px-3 py-1"}
         >
           Customer Invoicing
         </Link>
         <Link
-          href={tabHref({ view: "staff" })}
+          href={viewTabHref("staff")}
           className={view === "staff" ? "bg-hover px-3 py-1 rounded" : "px-3 py-1"}
         >
           Staff Pays
@@ -129,24 +120,8 @@ export default async function BillingPage({
       </div>
 
       <div className="flex flex-wrap gap-4 items-end">
-        <div className="flex gap-2 border border-border rounded p-1 text-sm">
-          <Link
-            href={tabHref({ level: "summary" })}
-            className={level === "summary" ? "bg-hover px-3 py-1 rounded" : "px-3 py-1"}
-          >
-            Summary
-          </Link>
-          <Link
-            href={tabHref({ level: "detail" })}
-            className={level === "detail" ? "bg-hover px-3 py-1 rounded" : "px-3 py-1"}
-          >
-            Detail
-          </Link>
-        </div>
-
         <form method="GET" className="flex flex-wrap gap-2 items-end text-sm">
           <input type="hidden" name="view" value={view} />
-          <input type="hidden" name="level" value={level} />
           {filterValue && <input type="hidden" name="filter" value={filterValue} />}
           <label className="flex flex-col gap-1">
             Start
@@ -192,8 +167,8 @@ export default async function BillingPage({
       {filterValue && (
         <div className="text-sm text-text-secondary">
           Showing: <span className="text-foreground font-semibold">{filterValue}</span>{" "}
-          <Link href={tabHref({ filter: "" })} className="text-info-text">
-            Clear
+          <Link href={backToSummaryHref} className="text-info-text">
+            ← Back to summary
           </Link>
         </div>
       )}

@@ -33,12 +33,12 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const view: View = searchParams.get("view") === "staff" ? "staff" : "customer";
-  const level: Level = searchParams.get("level") === "detail" ? "detail" : "summary";
   const today = new Date().toISOString().slice(0, 10);
   const start = searchParams.get("start") || today;
   const end = searchParams.get("end") || start;
   const groupBy: GroupBy = searchParams.get("groupBy") === "week" ? "week" : "day";
   const filterValue = searchParams.get("filter") || null;
+  const level: Level = filterValue ? "detail" : "summary";
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc(
