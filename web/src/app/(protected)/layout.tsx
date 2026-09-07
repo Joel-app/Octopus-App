@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { verifySession } from "@/lib/dal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { BrandLogo } from "@/lib/theme/BrandLogo";
-import { ThemeToggle } from "@/lib/theme/ThemeToggle";
 import { CollapsibleSidebar } from "@/lib/settings/CollapsibleSidebar";
 import { NOTIFICATIONS_COOKIE_NAME, parseNotificationsPref } from "@/lib/settings/shared";
 import { NavDropdown } from "@/lib/nav/NavDropdown";
@@ -97,7 +96,6 @@ export default async function ProtectedLayout({
           </Link>
         </nav>
         <div className="mt-auto flex flex-col gap-3">
-          <ThemeToggle />
           <form action={logout}>
             <button type="submit" className="text-sm text-text-secondary">
               Log out

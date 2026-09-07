@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { NAV } from "@/lib/nav";
 import { DENSITY_COOKIE_NAME, NOTIFICATIONS_COOKIE_NAME, parseDensity, parseNotificationsPref } from "@/lib/settings/shared";
 import { DensityToggle } from "@/lib/settings/DensityToggle";
+import { ThemeToggle } from "@/lib/theme/ThemeToggle";
 import { changePassword, setDefaultTab, setNotificationsPref } from "./actions";
 
 export default async function SettingsPage() {
@@ -60,6 +61,11 @@ export default async function SettingsPage() {
             Update password
           </button>
         </form>
+      </section>
+
+      <section className="flex flex-col gap-3 border border-border rounded p-4">
+        <h2 className="text-sm font-semibold">Theme</h2>
+        <ThemeToggle />
       </section>
 
       <section className="flex flex-col gap-3 border border-border rounded p-4">
