@@ -6,8 +6,7 @@ import { BrandLogo } from "@/lib/theme/BrandLogo";
 import { ThemeToggle } from "@/lib/theme/ThemeToggle";
 import { CollapsibleSidebar } from "@/lib/settings/CollapsibleSidebar";
 import { NOTIFICATIONS_COOKIE_NAME, parseNotificationsPref } from "@/lib/settings/shared";
-import { NAV } from "@/lib/nav";
-import { BillingNavDropdown } from "@/lib/nav/BillingNavDropdown";
+import { NavDropdown } from "@/lib/nav/NavDropdown";
 import { logout } from "./actions";
 
 export default async function ProtectedLayout({
@@ -40,38 +39,60 @@ export default async function ProtectedLayout({
         </div>
         <div className="text-sm text-text-secondary">{profile.full_name}</div>
         <nav className="flex flex-col gap-2">
-          {NAV.map((item) =>
-            item.href === "/safety" ? (
-              <div key={item.href} className="flex items-center gap-1.5">
-                <Link href={item.href} className="text-sm">
-                  {item.label}
-                </Link>
-                {hazardOpenCount > 0 && (
-                  <Link
-                    href="/safety?type=hazard&status=open"
-                    title={`${hazardOpenCount} open hazard report${hazardOpenCount === 1 ? "" : "s"}`}
-                    className="bg-danger-text text-bg text-xs rounded-full px-1.5 leading-5"
-                  >
-                    H {hazardOpenCount}
-                  </Link>
-                )}
-                {incidentOpenCount > 0 && (
-                  <Link
-                    href="/safety?type=incident&status=open"
-                    title={`${incidentOpenCount} open incident report${incidentOpenCount === 1 ? "" : "s"}`}
-                    className="bg-danger-text text-bg text-xs rounded-full px-1.5 leading-5"
-                  >
-                    I {incidentOpenCount}
-                  </Link>
-                )}
-              </div>
-            ) : (
-              <Link key={item.href} href={item.href} className="text-sm">
-                {item.label}
-              </Link>
-            )
-          )}
-          {profile.role !== "operations" && <BillingNavDropdown />}
+          <NavDropdown
+            label="Operations"
+            items={[
+              { href: "/dashboard", label: "Daily View" },
+              { href: "/roster", label: "Roster" },
+              {
+                href: "/safety",
+                label: "Safety",
+                badge: (
+                  <>
+                    {hazardOpenCount > 0 && (
+                      <Link
+                        href="/safety?type=hazard&status=open"
+                        title={`${hazardOpenCount} open hazard report${hazardOpenCount === 1 ? "" : "s"}`}
+                        className="bg-danger-text text-bg text-xs rounded-full px-1.5 leading-5"
+                      >
+                        H {hazardOpenCount}
+                      </Link>
+                    )}
+                    {incidentOpenCount > 0 && (
+                      <Link
+                        href="/safety?type=incident&status=open"
+                        title={`${incidentOpenCount} open incident report${incidentOpenCount === 1 ? "" : "s"}`}
+                        className="bg-danger-text text-bg text-xs rounded-full px-1.5 leading-5"
+                      >
+                        I {incidentOpenCount}
+                      </Link>
+                    )}
+                  </>
+                ),
+              },
+            ]}
+          />
+          <NavDropdown
+            label="Records"
+            items={[
+              { href: "/customers", label: "Customers" },
+              { href: "/staff", label: "Staff" },
+              ...(profile.role !== "operations"
+                ? [
+                    {
+                      label: "Billing",
+                      children: [
+                        { href: "/billing?view=customer", label: "Customer Invoicing" },
+                        { href: "/billing?view=staff", label: "Staff Pays" },
+                      ],
+                    },
+                  ]
+                : []),
+            ]}
+          />
+          <Link href="/leave" className="text-sm">
+            Leave
+          </Link>
           {profile.role === "superadmin" && (
             <Link href="/admins" className="text-sm">
               Admins
