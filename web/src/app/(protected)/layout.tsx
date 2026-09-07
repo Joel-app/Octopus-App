@@ -7,6 +7,7 @@ import { ThemeToggle } from "@/lib/theme/ThemeToggle";
 import { CollapsibleSidebar } from "@/lib/settings/CollapsibleSidebar";
 import { NOTIFICATIONS_COOKIE_NAME, parseNotificationsPref } from "@/lib/settings/shared";
 import { NAV } from "@/lib/nav";
+import { BillingNavDropdown } from "@/lib/nav/BillingNavDropdown";
 import { logout } from "./actions";
 
 export default async function ProtectedLayout({
@@ -70,11 +71,7 @@ export default async function ProtectedLayout({
               </Link>
             )
           )}
-          {profile.role !== "operations" && (
-            <Link href="/billing" className="text-sm">
-              Billing
-            </Link>
-          )}
+          {profile.role !== "operations" && <BillingNavDropdown />}
           {profile.role === "superadmin" && (
             <Link href="/admins" className="text-sm">
               Admins
