@@ -70,6 +70,16 @@ export default async function ProtectedLayout({
               </Link>
             )
           )}
+          {profile.role !== "operations" && (
+            <>
+              <Link href="/pays" className="text-sm">
+                Pays
+              </Link>
+              <Link href="/billing" className="text-sm">
+                Billing
+              </Link>
+            </>
+          )}
           {profile.role === "superadmin" && (
             <Link href="/admins" className="text-sm">
               Admins
