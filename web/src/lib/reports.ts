@@ -10,6 +10,15 @@ export function periodKey(dateStr: string, groupBy: GroupBy): string {
   return d.toISOString().slice(0, 10);
 }
 
+// Inverse of periodKey: the [start, end] date bounds that bucket covers, so
+// a "View" link can re-query scoped to exactly the rows behind one total.
+export function periodBounds(period: string, groupBy: GroupBy): { start: string; end: string } {
+  if (groupBy === "day") return { start: period, end: period };
+  const d = new Date(`${period}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 6);
+  return { start: period, end: d.toISOString().slice(0, 10) };
+}
+
 export interface GroupedRow {
   period: string;
   dimension: string;

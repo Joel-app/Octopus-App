@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { verifySession } from "@/lib/dal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { aggregateByGroup, type GroupBy } from "@/lib/reports";
+import { aggregateByGroup, periodBounds, type GroupBy, type GroupedRow } from "@/lib/reports";
 
 type View = "customer" | "staff";
 type Level = "summary" | "detail";
@@ -35,7 +35,7 @@ function defaultDates() {
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; level?: string; start?: string; end?: string; groupBy?: string }>;
+  searchParams: Promise<{ view?: string; level?: string; start?: string; end?: string; groupBy?: string; filter?: string }>;
 }) {
   const { profile: viewer } = await verifySession();
   if (viewer.role === "operations") {
@@ -49,6 +49,7 @@ export default async function BillingPage({
   const start = params.start || defaults.start;
   const end = params.end || defaults.end;
   const groupBy: GroupBy = params.groupBy === "week" ? "week" : "day";
+  const filterValue = params.filter || null;
 
   const supabase = await createSupabaseServerClient();
 
@@ -66,14 +67,47 @@ export default async function BillingPage({
   const otherDimensionOf = (r: BillingRow | PayRow) =>
     (view === "customer" ? (r as BillingRow).staff_name : (r as PayRow).customer_name) ?? "—";
 
-  const grouped = level === "summary" ? aggregateByGroup(rows, groupBy, dimensionOf) : [];
-  const detailRows = level === "detail" ? [...rows].sort((a, b) => a.item_date.localeCompare(b.item_date)) : [];
-  const total = rows.reduce((sum, r) => sum + r.amount, 0);
+  const scopedRows = filterValue ? rows.filter((r) => dimensionOf(r) === filterValue) : rows;
+
+  const grouped = level === "summary" ? aggregateByGroup(scopedRows, groupBy, dimensionOf) : [];
+  const detailRows =
+    level === "detail" ? [...scopedRows].sort((a, b) => a.item_date.localeCompare(b.item_date)) : [];
+  const total = scopedRows.reduce((sum, r) => sum + r.amount, 0);
 
   function tabHref(overrides: Record<string, string>) {
-    const merged = new URLSearchParams({ view, level, start, end, groupBy, ...overrides });
+    const merged = new URLSearchParams({
+      view,
+      level,
+      start,
+      end,
+      groupBy,
+      ...(filterValue ? { filter: filterValue } : {}),
+      ...overrides,
+    });
     return `/billing?${merged.toString()}`;
   }
+
+  function viewHref(g: GroupedRow) {
+    const bounds = periodBounds(g.period, groupBy);
+    const merged = new URLSearchParams({
+      view,
+      level: "detail",
+      start: bounds.start,
+      end: bounds.end,
+      groupBy,
+      filter: g.dimension,
+    });
+    return `/billing?${merged.toString()}`;
+  }
+
+  const exportHref = `/api/billing/export?${new URLSearchParams({
+    view,
+    level,
+    start,
+    end,
+    groupBy,
+    ...(filterValue ? { filter: filterValue } : {}),
+  }).toString()}`;
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
@@ -113,6 +147,7 @@ export default async function BillingPage({
         <form method="GET" className="flex flex-wrap gap-2 items-end text-sm">
           <input type="hidden" name="view" value={view} />
           <input type="hidden" name="level" value={level} />
+          {filterValue && <input type="hidden" name="filter" value={filterValue} />}
           <label className="flex flex-col gap-1">
             Start
             <input
@@ -149,13 +184,19 @@ export default async function BillingPage({
           </button>
         </form>
 
-        <a
-          href={`/api/billing/export?${new URLSearchParams({ view, level, start, end, groupBy }).toString()}`}
-          className="bg-foreground text-bg rounded px-3 py-1.5 text-sm"
-        >
+        <a href={exportHref} className="bg-foreground text-bg rounded px-3 py-1.5 text-sm">
           Export to Excel
         </a>
       </div>
+
+      {filterValue && (
+        <div className="text-sm text-text-secondary">
+          Showing: <span className="text-foreground font-semibold">{filterValue}</span>{" "}
+          <Link href={tabHref({ filter: "" })} className="text-info-text">
+            Clear
+          </Link>
+        </div>
+      )}
 
       {level === "summary" ? (
         <table className="text-sm w-full">
@@ -164,6 +205,7 @@ export default async function BillingPage({
               <th className="font-normal pr-4">{groupBy === "day" ? "Date" : "Week starting"}</th>
               <th className="font-normal pr-4">{dimensionLabel}</th>
               <th className="font-normal pr-4">Total {view === "customer" ? "bill" : "pay"}</th>
+              <th />
             </tr>
           </thead>
           <tbody>
@@ -172,11 +214,16 @@ export default async function BillingPage({
                 <td className="py-2 pr-4">{g.period}</td>
                 <td className="py-2 pr-4">{g.dimension}</td>
                 <td className="py-2 pr-4">${g.total.toFixed(2)}</td>
+                <td className="py-2">
+                  <Link href={viewHref(g)} className="text-xs text-info-text">
+                    View
+                  </Link>
+                </td>
               </tr>
             ))}
             {grouped.length === 0 && (
               <tr>
-                <td colSpan={3} className="py-2 text-text-secondary">
+                <td colSpan={4} className="py-2 text-text-secondary">
                   Nothing recorded for this range.
                 </td>
               </tr>
@@ -189,6 +236,7 @@ export default async function BillingPage({
                   Total
                 </td>
                 <td className="py-2 pr-4">${total.toFixed(2)}</td>
+                <td />
               </tr>
             </tfoot>
           )}

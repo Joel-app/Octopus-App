@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
   const start = searchParams.get("start") || today;
   const end = searchParams.get("end") || start;
   const groupBy: GroupBy = searchParams.get("groupBy") === "week" ? "week" : "day";
+  const filterValue = searchParams.get("filter") || null;
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc(
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
   );
   if (error) return new Response(error.message, { status: 500 });
 
-  const rows = (data ?? []) as (BillingRow | PayRow)[];
+  const allRows = (data ?? []) as (BillingRow | PayRow)[];
   const dimensionLabel = view === "customer" ? "Customer" : "Staff";
   const dimensionOf = (r: BillingRow | PayRow) =>
     view === "customer" ? (r as BillingRow).customer_name : (r as PayRow).staff_name;
@@ -54,6 +55,8 @@ export async function GET(request: NextRequest) {
   const otherDimensionOf = (r: BillingRow | PayRow) =>
     (view === "customer" ? (r as BillingRow).staff_name : (r as PayRow).customer_name) ?? "";
   const amountLabel = view === "customer" ? "Total bill" : "Total pay";
+
+  const rows = filterValue ? allRows.filter((r) => dimensionOf(r) === filterValue) : allRows;
 
   const sheetName = view === "customer" ? "Customer Invoicing" : "Staff Pays";
   const filenameBase = `${view === "customer" ? "customer-invoicing" : "staff-pays"}-${level}-${start}-to-${end}`;
