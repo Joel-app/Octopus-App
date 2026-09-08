@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function addStaff(formData: FormData) {
@@ -14,6 +15,7 @@ export async function addStaff(formData: FormData) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/staff");
+  redirect("/staff");
 }
 
 export async function setStaffActive(id: string, active: boolean) {

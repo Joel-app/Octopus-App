@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { verifySession } from "@/lib/dal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { addStaff, setStaffActive } from "./actions";
+import { setStaffActive } from "./actions";
 
 interface StaffRow {
   id: string;
@@ -61,35 +61,12 @@ export default async function StaffPage() {
     <div className="flex flex-col gap-8 max-w-2xl">
       <h1 className="text-lg font-semibold">Staff</h1>
 
-      <form action={addStaff} className="flex flex-col gap-2 border border-border rounded p-4">
-        <h2 className="text-sm font-semibold">Add staff</h2>
-        <input
-          name="full_name"
-          placeholder="Full name"
-          required
-          className="border border-border rounded px-2 py-1 bg-panel"
-        />
-        <input
-          name="position"
-          placeholder="Position (e.g. General Labourer)"
-          className="border border-border rounded px-2 py-1 bg-panel"
-        />
-        <input
-          name="pin"
-          placeholder="PIN"
-          inputMode="numeric"
-          pattern="[0-9]{4,8}"
-          required
-          className="border border-border rounded px-2 py-1 bg-panel"
-        />
-        <p className="text-xs text-text-muted">
-          This PIN is what they'll use to sign in on the mobile app — address/bank/tax/super/visa
-          details are added afterwards from their compliance page below.
-        </p>
-        <button type="submit" className="bg-foreground text-bg rounded px-3 py-1.5 mt-2 self-start">
-          Add staff
-        </button>
-      </form>
+      <Link
+        href="/staff/new"
+        className="bg-foreground text-bg rounded px-3 py-1.5 self-start text-sm"
+      >
+        + Add staff
+      </Link>
 
       <table className="text-sm w-full">
         <thead>

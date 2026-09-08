@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { AddCustomerForm } from "./AddCustomerForm";
 
 interface CustomerRow {
   id: string;
@@ -21,7 +20,12 @@ export default async function CustomersPage() {
     <div className="flex flex-col gap-6 max-w-3xl">
       <h1 className="text-lg font-semibold">Customers</h1>
 
-      <AddCustomerForm />
+      <Link
+        href="/customers/new"
+        className="bg-foreground text-bg rounded px-3 py-1.5 self-start text-sm"
+      >
+        + Add customer
+      </Link>
 
       <table className="text-sm w-full">
         <thead>

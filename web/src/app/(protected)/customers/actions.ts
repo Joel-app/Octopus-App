@@ -1,19 +1,25 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DEFAULT_HOURLY_POSITIONS } from "@/lib/constants";
 
-export async function addCustomer(
-  name: string,
-  address: { street: string; suburb: string; state: string; postcode: string },
-  operatingHours: string | null
-) {
+export async function addCustomer(formData: FormData) {
   const supabase = await createSupabaseServerClient();
 
   const { data: customer, error } = await supabase
     .from("customers")
-    .insert({ name, address, operating_hours: operatingHours })
+    .insert({
+      name: String(formData.get("name") || ""),
+      address: {
+        street: String(formData.get("street") || ""),
+        suburb: String(formData.get("suburb") || ""),
+        state: String(formData.get("state") || ""),
+        postcode: String(formData.get("postcode") || ""),
+      },
+      operating_hours: String(formData.get("operating_hours") || "") || null,
+    })
     .select("id")
     .single();
 
@@ -35,6 +41,7 @@ export async function addCustomer(
 
   if (rateError) throw new Error(rateError.message);
   revalidatePath("/customers");
+  redirect("/customers");
 }
 
 export async function updateCustomer(
