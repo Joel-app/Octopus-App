@@ -238,7 +238,7 @@ async function OverviewTab({
             <Empty />
           )}
         </ChartCard>
-        <ChartCard title="Fill rate per day" subtitle="Rostered staff who signed on, completed days only" table={att.fillPerDay.table}>
+        <ChartCard title="Fill rate per day" subtitle="Hourly shifts: rostered staff who signed on, completed days only" table={att.fillPerDay.table}>
           {att.fillPerDay.values.length ? (
             <ColumnChart
               categories={att.fillPerDay.categories}
@@ -407,7 +407,7 @@ async function AttendanceTab({ supabase, range, rangeLabel }: { supabase: Sb; ra
         <StatTile
           label="Fill rate"
           value={a.fillRate === null ? "—" : formatValue(a.fillRate, "percent")}
-          context={`${a.totalRostered} rostered shifts, completed days`}
+          context={`${a.totalRostered} rostered hourly shifts, completed days`}
         />
         <StatTile label="No-shows" value={a.noShowCount} context={rangeLabel} />
         <StatTile label="Late sign-ons" value={a.lateCount} context="More than 5 minutes after shift start" />
@@ -415,7 +415,7 @@ async function AttendanceTab({ supabase, range, rangeLabel }: { supabase: Sb; ra
       </div>
 
       <div className={charts}>
-        <ChartCard title="Fill rate per day" subtitle="Rostered staff who signed on, completed days only" table={a.fillPerDay.table}>
+        <ChartCard title="Fill rate per day" subtitle="Hourly shifts: rostered staff who signed on, completed days only" table={a.fillPerDay.table}>
           {a.fillPerDay.values.length ? (
             <ColumnChart
               categories={a.fillPerDay.categories}

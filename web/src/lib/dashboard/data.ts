@@ -290,6 +290,9 @@ export async function loadAttendance(sb: Supabase, { start, end, today }: Range)
   ]);
   const site = (id: string) => customers.get(id) ?? "Unknown site";
   const person = (id: string) => people.get(id) ?? "Unknown";
+  // Only hourly shifts have a sign-on in the mobile app — container/rework
+  // crews log work through jobs — so attendance is measured on hourly shifts.
+  const hourly = assignments.filter((a) => a.shifts.shift_type === "hourly");
 
   // Earliest sign-on per (shift, person).
   const firstSignOn = new Map<string, string>();
@@ -302,7 +305,7 @@ export async function loadAttendance(sb: Supabase, { start, end, today }: Range)
   // Fill rate only counts completed days — today's later shifts haven't started yet.
   const lastCompleteDay = end < today ? end : addDays(today, -1);
   const pastDays = lastCompleteDay >= start ? eachDay(start, lastCompleteDay) : [];
-  const past = assignments.filter((a) => a.shifts.date <= lastCompleteDay);
+  const past = hourly.filter((a) => a.shifts.date <= lastCompleteDay);
   const rostered = sumBy(past, (a) => a.shifts.date, () => 1);
   const attended = sumBy(
     past.filter((a) => firstSignOn.has(`${a.shift_id}:${a.staff_id}`)),
@@ -320,7 +323,7 @@ export async function loadAttendance(sb: Supabase, { start, end, today }: Range)
     .filter((a) => !firstSignOn.has(`${a.shift_id}:${a.staff_id}`))
     .sort((a, b) => b.shifts.date.localeCompare(a.shifts.date));
 
-  const late = assignments
+  const late = hourly
     .map((a) => {
       const signOn = firstSignOn.get(`${a.shift_id}:${a.staff_id}`);
       if (!signOn || sydneyDate(signOn) !== a.shifts.date) return null;
