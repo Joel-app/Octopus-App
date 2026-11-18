@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { verifySession } from "@/lib/dal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { fetchReport } from "@/lib/supabase/paging";
 import { aggregateByGroup, periodBounds, type GroupBy, type GroupedRow } from "@/lib/reports";
 
 type View = "customer" | "staff";
@@ -52,11 +53,12 @@ export default async function BillingPage({
 
   const supabase = await createSupabaseServerClient();
 
-  const { data, error } = await supabase.rpc(
+  const data = await fetchReport<BillingRow | PayRow>(
+    supabase,
     view === "customer" ? "admin_get_billing_report" : "admin_get_pay_report",
-    { p_start_date: start, p_end_date: end }
+    start,
+    end
   );
-  if (error) throw new Error(error.message);
 
   const rows = (data ?? []) as (BillingRow | PayRow)[];
   const dimensionLabel = view === "customer" ? "Customer" : "Staff";

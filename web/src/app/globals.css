@@ -22,6 +22,32 @@
   --surface-2: #201f1c;
   --surface-3: #1e1d1a;
   --surface-4: #1a1a18;
+
+  /* Chart palette (dark steps). Validated as a 3-slot categorical set against
+     the --bg surface in both modes — keep the order; it's the CVD-safety
+     mechanism, not decoration. Charts never use more than these three. */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --diverge-neg: #e66767;
+  --chart-grid: #2c2c2a;
+  --chart-axis: #383835;
+}
+
+/* Status colors are fixed across themes and reserved for state — never a series. */
+:root {
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
+}
+
+:root[data-theme="light"] {
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --diverge-neg: #e34948;
+  --chart-grid: #e1e0d9;
+  --chart-axis: #c3c2b7;
 }
 
 :root[data-theme="light"] {

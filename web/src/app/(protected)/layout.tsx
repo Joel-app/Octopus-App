@@ -38,6 +38,9 @@ export default async function ProtectedLayout({
         </div>
         <div className="text-sm text-text-secondary">{profile.full_name}</div>
         <nav className="flex flex-col gap-2">
+          <Link href="/overview" className="text-sm">
+            Dashboard
+          </Link>
           <NavDropdown
             label="Operations"
             items={[
@@ -103,7 +106,7 @@ export default async function ProtectedLayout({
           </form>
         </div>
       </CollapsibleSidebar>
-      <div className="flex-1 p-8">{children}</div>
+      <div className="flex-1 min-w-0 p-8">{children}</div>
     </div>
   );
 }

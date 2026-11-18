@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/dal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { fetchReport } from "@/lib/supabase/paging";
 import { aggregateByGroup, type GroupBy } from "@/lib/reports";
 import { buildXlsxResponse } from "@/lib/xlsx-export";
 
@@ -41,11 +42,17 @@ export async function GET(request: NextRequest) {
   const level: Level = filterValue ? "detail" : "summary";
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc(
-    view === "customer" ? "admin_get_billing_report" : "admin_get_pay_report",
-    { p_start_date: start, p_end_date: end }
-  );
-  if (error) return new Response(error.message, { status: 500 });
+  let data: (BillingRow | PayRow)[];
+  try {
+    data = await fetchReport<BillingRow | PayRow>(
+      supabase,
+      view === "customer" ? "admin_get_billing_report" : "admin_get_pay_report",
+      start,
+      end
+    );
+  } catch (e) {
+    return new Response(e instanceof Error ? e.message : "Report failed", { status: 500 });
+  }
 
   const allRows = (data ?? []) as (BillingRow | PayRow)[];
   const dimensionLabel = view === "customer" ? "Customer" : "Staff";
